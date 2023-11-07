@@ -4,8 +4,6 @@ import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 
 import com.raquo.laminar.api.L.*
-import be.doeraene.webcomponents.ui5.*
-import be.doeraene.webcomponents.ui5.configkeys.*
 
 import scala.quoted.*
 import scala.util.Try
@@ -48,9 +46,7 @@ given Form[String] with
       syncParent: () => Unit,
       values: List[String] = List.empty
   ): HtmlElement =
-    Input(
-      _.showClearIcon := true,
-      value <-- variable.signal,
+    input(
       onInput.mapToValue --> { v =>
         variable.set(v)
         syncParent()
@@ -63,9 +59,7 @@ def stringForm[A](to: String => A) = new Form[A]:
       syncParent: () => Unit,
       values: List[A] = List.empty
   ): HtmlElement =
-    Input(
-      _.showClearIcon := true,
-      value <-- variable.signal.map(_.toString),
+    input(
       onInput.mapToValue.map(to) --> { v =>
         variable.set(v)
         syncParent()
@@ -124,9 +118,9 @@ given eitherOf[L, R](using
 
       div(
         span(
-          Link(ld.label, onClick.mapTo(Left(vl.now())) --> variable.writer),
+          a(ld.label, onClick.mapTo(Left(vl.now())) --> variable.writer),
           "----",
-          Link(
+          a(
             rd.label,
             onClick.mapTo(
               Right(vr.now())
@@ -170,8 +164,7 @@ given optionOfA[A](using
       }
       a.now() match
         case null =>
-          Button(
-            _.design := ButtonDesign.Emphasized,
+          button(
             "Set",
             onClick.mapTo(Some(d.default)) --> variable.writer
           )
@@ -185,21 +178,19 @@ given optionOfA[A](using
               fa.render(a, syncParent)
             ),
             div(
-              Button(
+              button(
                 display <-- variable.signal.map {
                   case Some(_) => "none"
                   case None    => "block"
                 },
-                _.design := ButtonDesign.Emphasized,
                 "Set",
                 onClick.mapTo(Some(d.default)) --> variable.writer
               ),
-              Button(
+              button(
                 display <-- variable.signal.map {
                   case Some(_) => "block"
                   case None    => "none"
                 },
-                _.design := ButtonDesign.Emphasized,
                 "Clear",
                 onClick.mapTo(None) --> variable.writer
               )
@@ -243,11 +234,9 @@ given listOfA[A](using fa: Form[A]): Form[List[A]] =
           )
         )
 
-      UList(
+      u(
         width := "100%",
-        _.id := "list-of-string",
-        _.noDataText := "No  data",
-        _.separators := ListSeparator.None,
+        idAttr := "list-of-string",
         children <-- variable
           .zoom(_.zipWithIndex)((a, b) => b.map(_._1))
           .signal

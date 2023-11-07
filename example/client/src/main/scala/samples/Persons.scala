@@ -5,7 +5,6 @@ import dev.cheleb.scalamigen.{*, given}
 import org.scalajs.dom
 import com.raquo.laminar.api.L.*
 import magnolia1.*
-import be.doeraene.webcomponents.ui5.*
 
 import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*

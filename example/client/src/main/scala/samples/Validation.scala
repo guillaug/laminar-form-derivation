@@ -8,7 +8,6 @@ import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 
 import com.raquo.airstream.state.Var
-import be.doeraene.webcomponents.ui5.Input
 
 import model.CurrencyCode
 

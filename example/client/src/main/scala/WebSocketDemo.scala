@@ -1,8 +1,6 @@
 package polyui
 
 import com.raquo.laminar.api.L.{*, given}
-import be.doeraene.webcomponents.ui5.*
-import be.doeraene.webcomponents.ui5.configkeys.*
 import io.laminext.websocket._
 import org.scalajs.dom.KeyCode
 import com.raquo.laminar.CollectionCommand
@@ -37,15 +35,15 @@ object WebSocketDemo {
 
   val wsPanel = div(
     span(
-      Avatar(sherpal),
-      Button("Connect!", _.events.onClick --> ws.reconnect)
+      div(sherpal),
+      button("Connect!", onClick --> ws.reconnect)
     ),
-    Panel(
+    div(
       width := "50%",
-      _.headerText := "Both expandable and expanded",
+      "Both expandable and expanded",
       children.command <-- ws.received.map { msg =>
         CollectionCommand.Append(
-          div(Label(_.wrappingType := WrappingType.Normal, msg))
+          div(div(msg))
         )
       }
     ),

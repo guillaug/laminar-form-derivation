@@ -1,12 +1,14 @@
 //import ProjectDef._
 import org.scalajs.linker.interface.ModuleSplitStyle
 
+ThisBuild / version          := "0.4.3-noui5"
+
 val scala33 = "3.3.0"
 
 inThisBuild(
   List(
     scalaVersion := scala33,
-    organization := "dev.cheleb",
+    organization := "guillaug",
     homepage := Some(url("https://github.com/cheleb/")),
     sonatypeCredentialHost := "s01.oss.sonatype.org",
     sonatypeRepository := "https://s01.oss.sonatype.org/service/local",
@@ -116,7 +118,7 @@ lazy val core = scalajsProject("core")
       "com.softwaremill.magnolia1_3" %%% "magnolia" % "1.3.3",
       "com.raquo" %%% "laminar" % "16.0.0",
       "io.laminext" %%% "websocket" % "0.16.0",
-      "be.doeraene" %%% "web-components-ui5" % "1.10.0",
+      // "be.doeraene" %%% "web-components-ui5" % "1.10.0",
       "io.github.iltotore" %%% "iron" % "2.2.0"
     )
   )

@@ -3,8 +3,6 @@ package dev.cheleb.scalamigen
 import com.raquo.laminar.api.L.*
 import magnolia1.*
 import scala.CanEqual.derived
-import be.doeraene.webcomponents.ui5.*
-import be.doeraene.webcomponents.ui5.configkeys.*
 import java.util.UUID
 import scala.util.Random
 
@@ -77,7 +75,10 @@ trait Form[A] { self =>
     ): HtmlElement =
       div(
         div(
-          Label(_.required := required, _.showColon := false, name)
+          label(
+            cls := "block text-sm font-medium leading-6 text-gray-900",
+            name
+          )
         ),
         div(
           self.render(variable, syncParent, values)
@@ -111,35 +112,41 @@ object Form extends AutoDerivation[Form] {
         syncParent: () => Unit = () => (),
         values: List[A] = List.empty
     ): HtmlElement =
-      Panel(
-        _.id := caseClass.typeInfo.full,
-        _.headerText := caseClass.typeInfo.full,
-        _.headerLevel := TitleLevel.H3,
-        caseClass.params.map { param =>
-          val isOption = param.deref(variable.now()).isInstanceOf[Option[_]]
+      div(
+        idAttr := caseClass.typeInfo.full,
+        cls := "divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow",
+        div(
+          cls := "px-4 py-5 sm:px-6",
+          caseClass.typeInfo.full
+        ),
+        div(
+          cls := "px-4 py-5 sm:p-6",
+          caseClass.params.map { param =>
+            val isOption = param.deref(variable.now()).isInstanceOf[Option[_]]
 
-          val enumValues =
-            if param.annotations.isEmpty then List.empty[A]
-            else if param.annotations(0).isInstanceOf[EnumValues[_]] then
-              param.annotations(0).asInstanceOf[EnumValues[A]].values.toList
-            else List.empty[A]
+            val enumValues =
+              if param.annotations.isEmpty then List.empty[A]
+              else if param.annotations(0).isInstanceOf[EnumValues[_]] then
+                param.annotations(0).asInstanceOf[EnumValues[A]].values.toList
+              else List.empty[A]
 
-          param.typeclass
-            .labelled(param.label, !isOption)
-            .render(
-              variable.zoom(a => param.deref(a))((_, value) =>
-                caseClass.construct { p =>
-                  if (p.label == param.label) value
-                  else p.deref(variable.now())
-                }
-              )(unsafeWindowOwner),
-              syncParent,
-              enumValues.map(_.asInstanceOf[param.PType])
-            )
-            .amend(
-              idAttr := param.label
-            )
-        }.toSeq
+            param.typeclass
+              .labelled(param.label, !isOption)
+              .render(
+                variable.zoom(a => param.deref(a))((_, value) =>
+                  caseClass.construct { p =>
+                    if (p.label == param.label) value
+                    else p.deref(variable.now())
+                  }
+                )(unsafeWindowOwner),
+                syncParent,
+                enumValues.map(_.asInstanceOf[param.PType])
+              )
+              .amend(
+                idAttr := param.label
+              )
+          }.toSeq
+        )
       )
   }
 
@@ -154,29 +161,49 @@ object Form extends AutoDerivation[Form] {
       if sealedTrait.isEnum then
         val valuesLabels = values.map(_.toString)
         div(
-          Select(
-            _.events.onChange
-              .map(_.detail.selectedOption.dataset) --> { ds =>
-              ds.get("idx").foreach(idx => variable.set(values(idx.toInt)))
-              syncParent()
-            },
-            sealedTrait.subtypes
+          select(
+            // idAttr := "location",
+            // name := "location",
+            cls := "mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6",
+            sealedTrait.subtypes.toSeq
               .map(_.typeInfo.short)
               .filter(valuesLabels.contains(_))
               .map { label =>
-                Select.option(
+                option(
                   label,
                   dataAttr("idx") := values
                     .map(_.toString)
                     .indexOf(label)
                     .toString(),
-                  _.selected <-- variable.signal.map(
+                  selected <-- variable.signal.map(
                     _.toString() == label
                   )
                 )
               }
-              .toSeq
           )
+          // Select(
+          //   _.events.onChange
+          //     .map(_.detail.selectedOption.dataset) --> { ds =>
+          //     ds.get("idx").foreach(idx => variable.set(values(idx.toInt)))
+          //     syncParent()
+          //   },
+          //   sealedTrait.subtypes
+          //     .map(_.typeInfo.short)
+          //     .filter(valuesLabels.contains(_))
+          //     .map { label =>
+          //       Select.option(
+          //         label,
+          //         dataAttr("idx") := values
+          //           .map(_.toString)
+          //           .indexOf(label)
+          //           .toString(),
+          //         _.selected <-- variable.signal.map(
+          //           _.toString() == label
+          //         )
+          //       )
+          //     }
+          //     .toSeq
+          // )
         )
       else div("Not an enum")
 
