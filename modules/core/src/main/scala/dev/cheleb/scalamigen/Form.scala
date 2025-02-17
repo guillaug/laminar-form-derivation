@@ -91,9 +91,33 @@ trait Form[A] { self =>
 
   protected var _panelConfig: Option[PanelConfig] = None
 
-  def withPanelConfig(label: Option[String], asTable: Boolean) =
-    _panelConfig = Some(PanelConfig(label, asTable))
+  def withPanelConfig(label: Option[String], asTable: Boolean = true, showField: Boolean = true, showBorder: Boolean = true) =
+    _panelConfig = Some(PanelConfig(label, asTable, showField, showBorder))
     self
+
+  private var _panelNameOverwrite: Option[String] = None
+
+  def setPanelNameOverwrite(label: String): Form[A] = 
+    _panelNameOverwrite = Some(label)
+    self
+
+  def unsetPanelNameOverwrite: Form[A] = 
+    _panelNameOverwrite = None
+    self
+
+  def getPanelNameOverwrite: Option[String] = 
+    _panelNameOverwrite
+  
+  import scala.collection.mutable
+
+  private val _labelToFieldName: mutable.Map[String, String] = mutable.Map()
+
+  def setFieldNameOverwriteForParam(paramLabel: String, fieldName: String): Form[A] =
+    _labelToFieldName.addOne(paramLabel, fieldName)
+    this
+
+  def getFieldNameOverwriteForParam(paramLabel: String): Option[String] =
+    _labelToFieldName.get(paramLabel)
 
   /** Render a form for a variable.
     *
@@ -148,7 +172,7 @@ trait Form[A] { self =>
 
 
    */
-  def labelled(label: String, required: Boolean): Form[A] = new Form[A] {
+  def labelled(label: String, required: Boolean, showField: Boolean): Form[A] = new Form[A] {
     override def render(
         path: List[Symbol],
         variable: Var[A],
@@ -158,9 +182,11 @@ trait Form[A] { self =>
         errorBus: EventBus[(String, ValidationEvent)]
     ): HtmlElement =
       div(
-        div(
-          self.renderLabel(label, required)
-        ),
+        if (showField)
+          div(
+            self.renderLabel(label, required)
+          )
+        else emptyNode,
         div(
           self.render(path, variable, syncParent)
         )
@@ -631,12 +657,21 @@ object Form extends AutoDerivation[Form] {
   ): Form[A] = new Form[A] {
 
     private def fieldNameFromParam(param: CaseClass.Param[Form, A]): String = 
-      param.annotations
-        .find(_.isInstanceOf[FieldName]) match
-          case None => 
-            param.typeclass._fieldName.getOrElse(NameUtils.titleCase(param.label))
-          case Some(value) =>
-            value.asInstanceOf[FieldName].value
+      // first lookup mapping in case class typeclass
+      getFieldNameOverwriteForParam(param.label) match
+        case Some(fn) => fn // overwrite takes precedence
+        case None => 
+            // no overwrite found, lookup @FieldName annotations on param of case class
+            param.annotations
+              .find(_.isInstanceOf[FieldName]) match
+                case None => 
+                  // no @FieldName annotations founds, 
+                  param.typeclass._fieldName                     // take fieldName from param type class (if defined)
+                    .getOrElse(NameUtils.titleCase(param.label)) // or else, use param.label (name of param in case class)
+                case Some(value) =>
+                  // found @FieldName annotation, use it
+                  value.asInstanceOf[FieldName].value
+      
 
     private def mkVariableForParam(variable: Var[A], param: CaseClass.Param[Form, A]): Var[param.PType] =
       variable.zoom { a =>
@@ -658,19 +693,21 @@ object Form extends AutoDerivation[Form] {
         factory: WidgetFactory,
         errorBus: EventBus[(String, ValidationEvent)]
     ): HtmlElement = {
-      val panel = _panelConfig.getOrElse:
-        caseClass.annotations.find(_.isInstanceOf[Panel]) match
-          case None =>
-            caseClass.annotations.find(_.isInstanceOf[NoPanel]) match
-              case None =>
-                PanelConfig(Some(caseClass.typeInfo.short), true)
-              case Some(annot) =>
-                val asTable = annot.asInstanceOf[NoPanel].asTable
-                PanelConfig(None, asTable)
-
-          case Some(value) =>
-            val panel = value.asInstanceOf[Panel]
-            PanelConfig(Option(panel.name), panel.asTable)
+      val panel = 
+        _panelConfig
+          .getOrElse:
+            caseClass.annotations.find(_.isInstanceOf[Panel]) match
+            case None =>
+                caseClass.annotations.find(_.isInstanceOf[NoPanel]) match
+                case None =>
+                    PanelConfig(None, true)
+                case Some(annot) =>
+                    val asTable = annot.asInstanceOf[NoPanel].asTable
+                    PanelConfig(None, asTable)
+            case Some(value) =>
+                val panel = value.asInstanceOf[Panel]
+                PanelConfig(Option(panel.name), panel.asTable)
+          .copy(label = getPanelNameOverwrite.orElse(Some(caseClass.typeInfo.short)))
 
       def renderAsTable() =
         table(
@@ -681,11 +718,13 @@ object Form extends AutoDerivation[Form] {
             
             val fieldName = fieldNameFromParam(param)
             tr(
-              td(
-                param.typeclass.renderLabel(fieldName, !isOption)
-              ).amend(
-                className := panel.fieldCss
-              ),
+              if (param.typeclass._panelConfig.fold(true)(_.showField))
+                td(
+                    param.typeclass.renderLabel(fieldName, !isOption)
+                ).amend(
+                    className := panel.fieldCss,
+                )
+              else emptyNode,
               td(
                 param.typeclass
                   .render(
@@ -706,7 +745,7 @@ object Form extends AutoDerivation[Form] {
           val isOption = param.deref(variable.now()).isInstanceOf[Option[?]]
           val fieldName = fieldNameFromParam(param)
           param.typeclass
-            .labelled(fieldName, !isOption)
+            .labelled(fieldName, !isOption, panel.showField)
             .render(
               path :+ Symbol(fieldName),
               mkVariableForParam(variable, param),
@@ -718,9 +757,9 @@ object Form extends AutoDerivation[Form] {
         }.toSeq
 
       factory
-        .renderPanel(panel.label)
+        .renderPanel(panel.label, showBorder = panel.showBorder)
         .amend(
-          className := panel.panelCss,
+          Option.when(panel.showBorder)(()).map(_ => className := panel.panelCss),
           // cls := "srf-form",
           if panel.asTable then renderAsTable()
           else renderAsPanel()

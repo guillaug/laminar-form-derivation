@@ -10,6 +10,7 @@ val laminarVersion = "17.2.0"
 inThisBuild(
   List(
     scalaVersion := scala3,
+    version := "0.23.0-SNAPSHOT",
     organization := "dev.cheleb",
     homepage := Some(url("https://github.com/cheleb/")),
     sonatypeCredentialHost := "s01.oss.sonatype.org",

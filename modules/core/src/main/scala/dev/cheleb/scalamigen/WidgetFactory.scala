@@ -42,7 +42,7 @@ trait WidgetFactory:
   /** Render a panel. This is a container for other widgets derived from a case
     * class.
     */
-  def renderPanel(headerText: Option[String]): HtmlElement
+  def renderPanel(headerText: Option[String], showBorder: Boolean): HtmlElement
 
   /** Render an unordered list. This is a container for other widgets derived
     * from a case class.

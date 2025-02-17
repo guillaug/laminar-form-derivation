@@ -3,3 +3,12 @@ node_modules/
 dist/
 *.bak
 version.sbt
+
+.bloop
+.bsp
+.metals
+.vscode
+examples/client/.vite
+project/.bloop
+project/metals.sbt
+project/project

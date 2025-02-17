@@ -3,6 +3,8 @@ package dev.cheleb.scalamigen.config
 final case class PanelConfig(
     label: Option[String],
     asTable: Boolean,
+    showField: Boolean = true,
+    showBorder: Boolean = true,
     fieldCss: String = "srf-field",
     labelCss: String = "srf-label",
     panelCss: String = "srf-panel"

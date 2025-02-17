@@ -38,7 +38,7 @@ object LaminarWidgetFactory extends WidgetFactory:
       el
     )
   override def renderUL(id: String): HtmlElement = ul(idAttr := id)
-  override def renderPanel(headerText: Option[String]): HtmlElement =
+  override def renderPanel(headerText: Option[String], showBorder: Boolean): HtmlElement =
     headerText match
       case None => div()
       case Some(headerText) =>

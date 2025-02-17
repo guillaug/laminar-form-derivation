@@ -53,7 +53,7 @@ object UI5WidgetFactory extends WidgetFactory:
     _.noDataText := "No  data",
     _.separators := ListSeparator.None
   )
-  override def renderPanel(headerText: Option[String]): HtmlElement =
+  override def renderPanel(headerText: Option[String], withBorder: Boolean): HtmlElement =
     headerText match
       case Some(headerText) =>
         Panel(
@@ -61,7 +61,7 @@ object UI5WidgetFactory extends WidgetFactory:
           _.headerLevel := TitleLevel.H3
         )
       case None =>
-        div(cls := "srf-table")
+        if (withBorder) div(cls := "srf-table") else div()
 
   override def renderSelect(f: Int => Unit): HtmlElement = Select(
     _.events.onChange
