@@ -91,8 +91,15 @@ trait Form[A] { self =>
 
   protected var _panelConfig: Option[PanelConfig] = None
 
+  def getPanelConfig: Option[PanelConfig] = _panelConfig
+
   def withPanelConfig(label: Option[String], asTable: Boolean = true, showField: Boolean = true, showBorder: Boolean = true) =
     _panelConfig = Some(PanelConfig(label, asTable, showField, showBorder))
+    label match
+      case None => 
+        unsetPanelNameOverwrite
+      case Some(pn) =>
+        setPanelNameOverwrite(pn)
     self
 
   private var _panelNameOverwrite: Option[String] = None
@@ -582,7 +589,7 @@ object Form extends AutoDerivation[Form] {
             fa.render(path, varA, syncParent)
             .amend(
               display <-- displaySrc,
-              condVar.signal.map: v =>
+              condVar.signal.map { v =>
                 val ev = if (cond.check(v)){
                           ShownEvent
                 } else {
@@ -591,7 +598,7 @@ object Form extends AutoDerivation[Form] {
                           HiddenEvent
                 }
                 (path.key, ev)
-              --> errorBus.writer
+              } --> errorBus.writer
             )
         }
     }
@@ -700,14 +707,13 @@ object Form extends AutoDerivation[Form] {
             case None =>
                 caseClass.annotations.find(_.isInstanceOf[NoPanel]) match
                 case None =>
-                    PanelConfig(None, true)
+                    PanelConfig(getPanelNameOverwrite.orElse(None), true)
                 case Some(annot) =>
                     val asTable = annot.asInstanceOf[NoPanel].asTable
                     PanelConfig(None, asTable)
             case Some(value) =>
                 val panel = value.asInstanceOf[Panel]
-                PanelConfig(Option(panel.name), panel.asTable)
-          .copy(label = getPanelNameOverwrite.orElse(Some(caseClass.typeInfo.short)))
+                PanelConfig(getPanelNameOverwrite.orElse(Option(panel.name)), panel.asTable)
 
       def renderAsTable() =
         table(
@@ -757,7 +763,7 @@ object Form extends AutoDerivation[Form] {
         }.toSeq
 
       factory
-        .renderPanel(panel.label, showBorder = panel.showBorder)
+        .renderPanel(getPanelNameOverwrite.orElse(panel.label), showBorder = panel.showBorder)
         .amend(
           Option.when(panel.showBorder)(()).map(_ => className := panel.panelCss),
           // cls := "srf-form",
